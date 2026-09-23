@@ -490,12 +490,17 @@ function setPaymentStatus(deliveryId, status) {
 }
 
 function markDelivered(deliveryId) {
-  const idx = state.deliveries.findIndex(
-    d => d.id === deliveryId
-  );
 
+  let idx = -1;
+  for (let i = 0; i < state.deliveries.length; i++) {
+    if (state.deliveries[i].id === deliveryId) {
+      idx = i;
+      break;
+    }
+  }
   if (idx === -1) return;
   const d = state.deliveries[idx];
+  
   if (d.status !== 'Paid' && d.status !== 'Unpaid') {
     toast('Cannot mark delivered until payment status is confirmed!');
     return;
@@ -504,7 +509,7 @@ function markDelivered(deliveryId) {
   const orderTotal = d.orderTotal;
   addTransaction({
     customerName: d.customerName,
-    address: d.address, 
+    address: d.address,
     quantity: d.quantity,
     orderTotal: orderTotal,
     payment: d.status === 'Paid' ? orderTotal : 0,
@@ -513,7 +518,11 @@ function markDelivered(deliveryId) {
     status: d.status === 'Paid' ? 'Paid' : 'Unpaid'
   });
 
-  state.deliveries.splice(idx, 1);
+  for (let i = idx; i < state.deliveries.length - 1; i++) {
+    state.deliveries[i] = state.deliveries[i + 1];
+  }
+  state.deliveries.length = state.deliveries.length - 1;
+
   toast(`Delivery ${d.id} completed & transaction recorded.`);
   renderDelivery();
   renderTransactions();
