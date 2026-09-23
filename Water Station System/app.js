@@ -575,27 +575,31 @@ function editDelivery(id) {
 }
 
 function deleteDelivery(id) {
-  const confirmDelete = confirm('Are you sure you want to delete this delivery?');
+    const confirmDelete = confirm('Are you sure you want to delete this delivery?');
 
-  if (!confirmDelete) {
-    return;
-  }
-  let index = -1;
-  for (let i = 0; i < state.deliveries.length; i++) {
-    if (state.deliveries[i].id === id) {
-      index = i;
-      break;
+    if (!confirmDelete) {
+        return;
     }
-  }
-  if (index !== -1) {
-    state.deliveries.splice(index, 1);
-    renderDelivery();
-    renderAlerts();
-  }
-}
+    let index = -1;
+    for (let i = 0; i < state.deliveries.length; i++) {
+        if (state.deliveries[i].id === id) {
+            index = i;
+            break;
+        }
+    }
+    if (index !== -1) {
+        for (let i = index; i < state.deliveries.length - 1; i++) {
+            state.deliveries[i] = state.deliveries[i + 1];
+        }
+        state.deliveries.length = state.deliveries.length - 1;
 
+        renderDelivery();
+        renderAlerts();
+    }
+}
 function uiAddDelivery(e) {
     e.preventDefault();
+
     addDelivery({
         customerName: val('dl-customer'),
         address: val('dl-address'),
@@ -603,7 +607,6 @@ function uiAddDelivery(e) {
     });
     return false;
 }
-
 /* =========================================================================
    EQUIPMENT MAINTENANCE MANAGEMENT
    ========================================================================= */
