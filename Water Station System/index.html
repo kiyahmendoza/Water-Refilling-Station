@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3DS Water Refilling Station — Operations</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<p id="toast"></p>
+
+<!-- ============ AUTHENTICATION CONTAINERS ============ -->
+<div id="auth-wrapper" class="auth-container">
+  <img src="791958262_1605895874500269_3087654828019253097_n.jpg" alt="3DS Logo" class="auth-logo">
+
+  <!-- LOGIN -->
+  <fieldset id="login-form-wrap">
+    <legend>Log in</legend>
+    <form id="login-form" onsubmit="return handleLogin(event)">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="login-username" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" required>
+      </div>
+      <p id="login-error" style="color:red; margin-bottom:10px;" hidden></p>
+      <button type="submit" class="btn-primary">Log in</button>
+      <button type="button" class="btn-secondary" onclick="switchAuthTab('register')">Create an account instead</button>
+    </form>
+  </fieldset>
+
+  <!-- REGISTER -->
+  <fieldset id="register-form-wrap" style="display:none">
+    <legend>Create account</legend>
+    <form id="register-form" onsubmit="return handleRegister(event)">
+      <div class="form-group">
+        <label>Full name</label>
+        <input type="text" id="reg-fullname" required>
+      </div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="reg-username" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="reg-password" required minlength="4">
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <select id="reg-role">
+          <option value="Employee">Employee</option>
+          <option value="Admin">Admin</option>
+        </select>
+      </div>
+      <p id="register-error" style="color:red; margin-bottom:10px;" hidden></p>
+      <p id="register-success" style="color:green; margin-bottom:10px;" hidden></p>
+      <button type="submit" class="btn-primary">Create account</button>
+      <button type="button" class="btn-secondary" onclick="switchAuthTab('login')">Back to log in</button>
+    </form>
+  </fieldset>
+</div>
+
+<!-- ============ MAIN APP CONTAINER ============ -->
+<div id="app-layout" style="display:none">
+  
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <img src="791958262_1605895874500269_3087654828019253097_n.jpg" alt="Logo" class="sidebar-logo">
+      <div class="sidebar-title">
+        <h2>3DS Water Refilling Station</h2>
+        <p>Refilling Operations</p>
+      </div>
+    </div>
+    <ul id="sidebar-nav"></ul>
+  </aside>
+
+  <!-- MAIN WRAPPER -->
+  <div id="main-wrapper">
+    <!-- TOP RIBBON -->
+    <header class="top-ribbon">
+      <h2 id="section-title">Dashboard</h2>
+      <div id="user-info" class="user-profile">
+        <span>Logged in as <strong id="user-name"></strong></span>
+        <span id="user-role-badge" class="role-badge"></span>
+        <button class="btn-logout" onclick="handleLogout()">Log out</button>
+      </div>
+    </header>
+
+    <!-- MODULE CONTENT AREA -->
+    <main class="content-body">
+      <!-- USER MANAGEMENT -->
+      <fieldset id="sec-users" style="display:none">
+        <legend>User Management</legend>
+        <fieldset>
+          <legend>Register a new account</legend>
+          <form onsubmit="return uiRegisterUser(event)">
+            <label>Full name: <input type="text" id="um-fullname" required></label><br><br>
+            <label>Username: <input type="text" id="um-username" required></label><br><br>
+            <label>Password: <input type="password" id="um-password" required minlength="4"></label><br><br>
+            <label>Role:
+              <select id="um-role">
+                <option value="Employee">Employee</option>
+                <option value="Admin">Admin</option>
+              </select>
+            </label><br><br>
+            <label>Link Employee:
+              <select id="um-employee"></select>
+            </label><br><br>
+            <button type="submit" class="btn-primary" style="width:auto;">Register account</button>
+            <p id="um-msg"></p>
+          </form>
+        </fieldset>
+
+        <fieldset>
+          <legend>All accounts</legend>
+          <table id="tbl-users">
+            <thead><tr><th>User ID</th><th>Full name</th><th>Username</th><th>Role</th><th>Employee ID</th><th>Action</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </fieldset>
+      </fieldset>
+
+      <!-- TRANSACTION MANAGEMENT -->
+      <fieldset id="sec-transactions" style="display:none">
+        <legend>Transaction Management</legend>
+        <fieldset>
+          <legend>Record a walk-in transaction</legend>
+          <form onsubmit="return uiAddTransaction(event)">
+            <label>Customer name: <input type="text" id="tx-customer" required></label><br><br>
+            <label>Quantity (gallons): <input type="number" id="tx-qty" min="1" required oninput="autoComputeTxPrice()"></label><br><br>
+            <label>Order total (₱): <input type="number" id="tx-total" min="0" step="0.01" readonly style="background:#f1f5f9;"></label><br><br>
+            <label>Payment amount (₱): <input type="number" id="tx-payment" min="0" step="0.01" required></label><br><br>
+            <button type="submit" class="btn-primary" style="width:auto;">Complete transaction</button>
+            <p id="tx-msg"></p>
+          </form>
+        </fieldset>
+
+        <fieldset>
+          <legend>Transaction records</legend>
+          <table id="tbl-transactions">
+            <thead><tr>
+              <th>Txn ID</th><th>Date</th><th>Customer</th><th>Qty (gal)</th><th>Total</th><th>Payment</th><th>Change</th><th>Employee ID</th><th>Source</th><th>Status</th><th>Actions</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </fieldset>
+      </fieldset>
+
+      <!-- SALES & PROFIT -->
+      <fieldset id="sec-sales" style="display:none">
+        <legend>Sales &amp; Profit Management</legend>
+        <fieldset>
+          <legend>Date Range Filter</legend>
+          <label>From: <input type="date" id="sales-from"></label>
+          <label>To: <input type="date" id="sales-to"></label>
+          <button type="button" class="btn-primary" style="width:auto;" onclick="renderSales()">Filter Sales</button>
+        </fieldset>
+        <table id="tbl-sales">
+          <thead><tr><th>Total Sales</th><th>Actual On-Hand Money</th><th>Total Expenses</th><th>Net Profit</th></tr></thead>
+          <tbody><tr>
+            <td id="stat-sales">₱0.00</td>
+            <td id="stat-onhand">₱0.00</td>
+            <td id="stat-expenses">₱0.00</td>
+            <td id="stat-profit">₱0.00</td>
+          </tr></tbody>
+        </table>
+      </fieldset>
+
+      <!-- BILLS, TAXES, AND EXPENSES -->
+      <fieldset id="sec-bills" style="display:none">
+        <legend>Bills, Taxes, and Expenses</legend>
+        
+        <fieldset>
+          <legend>Add a paid bill / tax</legend>
+          <form onsubmit="return uiAddBill(event)">
+            <label>Date paid: <input type="date" id="bill-date" required></label><br><br>
+            <label>Type:
+              <select id="bill-type">
+                <option>Electricity</option>
+                <option>Water permit</option>
+                <option>Business tax</option>
+                <option>Rent</option>
+                <option>Other Tax/Bill</option>
+              </select>
+            </label><br><br>
+            <label>Amount (₱): <input type="number" id="bill-amount" min="0" step="0.01" required></label><br><br>
+            <button type="submit" class="btn-primary" style="width:auto;">Add Bill/Tax</button>
+          </form>
+        </fieldset>
+
+        <fieldset>
+          <legend>Record Operations Expenses</legend>
+          <form onsubmit="return uiAddExpense(event)">
+            <label>Date Paid: <input type="date" id="exp-date"></label><br><br>
+            <label>Expense Category: 
+              <select id="exp-type" onchange="document.getElementById('emp-salary-wrap').style.display = this.value==='Employee Salary'?'':'none';">
+                <option>Vehicle Maintenance</option>
+                <option>Gasoline</option>
+                <option>Employee Salary</option>
+              </select>
+            </label><br><br>
+            <div id="emp-salary-wrap" style="display:none;">
+              <label>Employee: <select id="exp-emp"></select></label><br><br>
+            </div>
+            <label>Amount (₱): <input type="number" id="exp-amount" min="0" step="0.01" required></label><br><br>
+            <button type="submit" class="btn-primary" style="width:auto;">Record Expense</button>
+          </form>
+        </fieldset>
+        <fieldset>
+          <legend>Filter Records by Month &amp; Year</legend>
+          <label>Month: <select id="bills-month"></select></label>
+          <label>Year: <input type="number" id="bills-year" value="2026" style="width:80px;"></label>
+          <button type="button" class="btn-primary" style="width:auto; margin-left:10px;" onclick="renderBills()">Filter Bills</button>
+          <button type="button" class="btn-secondary" style="width:auto; margin-left:5px;" onclick="resetBillsFilter()">Reset Filter</button>
+        </fieldset>
+        <fieldset>
+          <legend>Expense &amp; Bill Records</legend>
+          <table id="tbl-bills">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Date Paid</th>
+                <th>Type / Name</th>
+                <th>Amount</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <p id="bills-grand-total" style="margin-top:10px; font-weight:bold;"></p>
+        </fieldset>
+      </fieldset>
+
+      <!-- DELIVERY MANAGEMENT -->
+<fieldset id="sec-delivery" style="display:none">
+  <legend>Delivery Management</legend>
+  <fieldset>
+    <legend>Add a delivery order</legend>
+    <form onsubmit="return uiAddDelivery(event)">
+      <label>Customer name:</label>
+      <div style="position:relative; display:inline-block;">
+        <input type="text" id="dl-customer" required autocomplete="off" oninput="suggestCustomers()">
+        <div id="customerSuggestions"
+             style="position:absolute;
+                    top:100%;
+                    left:0;
+                    right:0;
+                    background:white;
+                    z-index:1000;">
+        </div>
+      </div><br><br>
+      <label>Delivery address:<input type="text" id="dl-address" required></label>
+      <br><br>
+      <label>Quantity (gallons):<input type="number" id="dl-qty" min="1" required oninput="autoComputeDeliveryPrice()"></label>
+      <br><br>
+      <label>Computed Total Price (₱):<input type="number" id="dl-price" readonly style="background:#f1f5f9;"></label>
+      <br><br>
+      <button type="submit"  class="btn-primary"  style="width:auto;">Save order</button>
+    </form>
+  </fieldset>
+  <fieldset>
+    <legend>Pending &amp; ongoing deliveries</legend>
+    <table id="tbl-delivery">
+      <thead>
+        <tr>
+          <th>Delivery ID</th>
+          <th>Date added</th>
+          <th>Customer</th>
+          <th>Address</th>
+          <th>Qty (gal)</th>
+          <th>Total</th>
+          <th>Payment Status</th>
+          <th>Payment Actions</th>
+          <th>Delivery Action</th>
+          <th id="deliveryActionsHeader">Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </fieldset>
+</fieldset>
+
+      <!-- EQUIPMENT MAINTENANCE -->
+      <fieldset id="sec-maintenance" style="display:none">
+        <legend>Equipment Maintenance</legend>
+        <fieldset>
+          <legend>Log Equipment Action</legend>
+          <form onsubmit="return uiAddMaintenance(event)">
+            <label>Action: 
+              <select id="mt-action" onchange="handleActionChange()">
+                <option value="Filter Replacement">Filter Replacement</option>
+                <option value="Backwash">Backwash</option>
+              </select>
+            </label><br><br>
+            <label>Filter Type:
+              <select id="mt-type">
+                <option value="Micron Filter">Micron Filter (Monthly)</option>
+                <option value="Carbon Block Filter">Carbon Block Filter (3 Months)</option>
+                <option value="CTO CocoPure Filter">CTO CocoPure Filter (3 Months)</option>
+                <option value="N/A">N/A</option>
+              </select>
+            </label><br><br>
+            <label>Date: <input type="date" id="mt-date"></label><br><br>
+            <button type="submit" class="btn-primary" style="width:auto;">Log maintenance</button>
+            <p id="mt-msg"></p>
+          </form>
+        </fieldset>
+
+        <fieldset>
+          <legend>Maintenance History</legend>
+          <table id="tbl-maintenance">
+            <thead><tr><th>ID</th><th>Date</th><th>Action</th><th>Type</th><th>System Status</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </fieldset>
+      </fieldset>
+
+      <!-- INVENTORY MANAGEMENT -->
+      <fieldset id="sec-inventory" style="display:none">
+        <legend>Inventory Management</legend>
+        <fieldset>
+          <legend id="inv-form-title">Add / Modify Item</legend>
+          <form onsubmit="return uiSaveInventoryItem(event)">
+            <input type="hidden" id="inv-edit-id">
+            <label>Item name: <input type="text" id="inv-name" required></label><br><br>
+            <label>Item type: <input type="text" id="inv-type" placeholder="e.g. Filter, Bottle, Cap"></label><br><br>
+            <label>Quantity: <input type="number" id="inv-qty" min="0" required></label><br><br>
+            <label>Unit: <input type="text" id="inv-unit" placeholder="pcs, gal, box" required></label><br><br>
+            <label>Date received: <input type="date" id="inv-received"></label><br><br>
+            <label>Minimum stock level: <input type="number" id="inv-min" min="0" required></label><br><br>
+            <button type="submit" id="inv-submit-btn" class="btn-primary" style="width:auto;">Save Item</button>
+            <button type="button" id="inv-cancel-btn" class="btn-secondary" style="width:auto; display:none;" onclick="cancelInventoryEdit()">Cancel edit</button>
+            <p id="inv-msg"></p>
+          </form>
+        </fieldset>
+        <fieldset>
+          <legend>Inventory list</legend>
+          <table id="tbl-inventory">
+            <thead><tr><th>Item ID</th><th>Name</th><th>Type</th><th>Quantity</th><th>Unit</th><th>Min. stock</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </fieldset>
+      </fieldset>
+
+      <!-- SUPPLY RECEIVING -->
+      <fieldset id="sec-receiving" style="display:none">
+        <legend>Supply Receiving Management</legend>
+        <fieldset>
+          <legend>Log an incoming supply delivery</legend>
+          <form onsubmit="return uiAddReceiving(event)">
+            <label>Supplier name: <select id="rc-supplier" required></select></label><br><br>
+            <label>Item name: <input type="text" id="rc-item" required></label><br><br>
+            <label>Item type: <input type="text" id="rc-type" placeholder="e.g. Filter, Bottle, Cap" required></label><br><br>
+            <label>Quantity: <input type="number" id="rc-qty" min="1" required></label><br><br>
+            <label>Unit: <input type="text" id="rc-unit" required></label><br><br>
+            <label>Expected delivery date: <input type="date" id="rc-expected"></label><br><br>
+            <button type="submit" class="btn-primary" style="width:auto;">Log Incoming Supply Record</button>
+          </form>
+        </fieldset>
+
+        <fieldset>
+          <legend>Supply receiving records</legend>
+          <table id="tbl-receiving">
+            <thead><tr>
+              <th>Receiving ID</th><th>Supplier</th><th>Item</th><th>Type</th><th>Qty</th><th>Unit</th><th>Expected</th><th>Received Date</th><th>Status</th><th>Action</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </fieldset>
+      </fieldset>
+
+      <!-- ALERTS -->
+      <fieldset id="sec-alerts" style="display:none">
+        <legend>Inventory Replenishment &amp; Alerts</legend>
+        <table id="tbl-alert-counts">
+          <thead><tr><th>Low / out of stock</th><th>Undelivered (>1 Day)</th><th>Maintenance alerts</th></tr></thead>
+          <tbody><tr>
+            <td id="alert-count-stock">0</td>
+            <td id="alert-count-delivery">0</td>
+            <td id="alert-count-maint">0</td>
+          </tr></tbody>
+        </table>
+
+        <table id="tbl-alerts">
+          <thead><tr><th>Alert type</th><th>Item / order</th><th>Date</th><th>Status</th><th>Recommended action</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </fieldset>
+
+      <!-- EMPLOYEE MANAGEMENT -->
+      <fieldset id="sec-employees" style="display:none">
+        <legend>Employee Management</legend>
+        <fieldset>
+          <legend id="emp-form-title">Add an employee</legend>
+          <form onsubmit="return uiSaveEmployee(event)">
+            <input type="hidden" id="emp-edit-id">
+            <label>Full name: <input type="text" id="emp-name" required></label><br><br>
+            <label>Contact number: <input type="text" id="emp-contact" required></label><br><br>
+            <label>Role: <input type="text" id="emp-role" placeholder="Cashier, Rider, Manager" required></label><br><br>
+            <label>Salary (₱): <input type="number" id="emp-salary" min="0" step="0.01" required></label><br><br>
+            <label>Borrowed Emergency Balance (₱): <input type="number" id="emp-balance" min="0" step="0.01" value="0"></label><br><br>
+            <button type="submit" id="emp-submit-btn" class="btn-primary" style="width:auto;">Add employee</button>
+            <button type="button" id="emp-cancel-btn" class="btn-secondary" style="width:auto; display:none;" onclick="cancelEmployeeEdit()">Cancel edit</button>
+          </form>
+        </fieldset>
+
+        <fieldset>
+          <legend>Staff records</legend>
+          <label>Search: <input type="text" id="emp-search" placeholder="Search by name or ID…" oninput="renderEmployees()"></label>
+          <table id="tbl-employees">
+            <thead><tr><th>Employee ID</th><th>Name</th><th>Contact</th><th>Role</th><th>Salary</th><th>Balance Owed</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </fieldset>
+      </fieldset>
+
+      <!-- SUPPLIER MANAGEMENT -->
+      <fieldset id="sec-suppliers" style="display:none">
+        <legend>Supplier Management</legend>
+        <fieldset>
+          <legend id="sup-form-title">Add a supplier</legend>
+          <form onsubmit="return uiSaveSupplier(event)">
+            <input type="hidden" id="sup-edit-id">
+            <label>Supplier name: <input type="text" id="sup-name" required></label><br><br>
+            <label>Contact number: <input type="text" id="sup-contact" required></label><br><br>
+            <label>Address: <input type="text" id="sup-address" required></label><br><br>
+            <button type="submit" id="sup-submit-btn" class="btn-primary" style="width:auto;">Add supplier</button>
+            <button type="button" id="sup-cancel-btn" class="btn-secondary" style="width:auto; display:none;" onclick="cancelSupplierEdit()">Cancel edit</button>
+          </form>
+        </fieldset>
+
+        <fieldset>
+          <legend>Supplier records</legend>
+          <label>Search: <input type="text" id="sup-search" placeholder="Search by name or ID…" oninput="renderSuppliers()"></label>
+          <table id="tbl-suppliers">
+            <thead><tr><th>Supplier ID</th><th>Name</th><th>Contact</th><th>Address</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </fieldset>
+      </fieldset>
+
+      <!-- REPORTS -->
+      <fieldset id="sec-reports" style="display:none">
+        <legend>Reports &amp; Monthly Visual Comparison</legend>
+        <button type="button" class="btn-primary" style="width:auto; margin-bottom:15px;" onclick="renderReport()">Compare Period Reports</button>
+        
+        <div style="display:flex; gap:20px; flex-wrap:wrap;">
+          <!-- Fieldset 1 -->
+          <fieldset style="flex:1; min-width:300px;">
+            <legend>Report Period A</legend>
+            <label>Month: <select id="rep-month-1"></select></label>
+            <label>Year: <input type="number" id="rep-year-1" value="2026" style="width:80px;"></label>
+            <hr style="margin:15px 0;">
+            <p><strong>Completed Orders:</strong> <span id="rep1-orders">0</span></p>
+            <p><strong>Sales Revenue:</strong> <span id="rep1-sales">₱0.00</span></p>
+            <p><strong>Total Expenses:</strong> <span id="rep1-expenses">₱0.00</span></p>
+            <p><strong>Net Profit:</strong> <span id="rep1-profit">₱0.00</span></p>
+          </fieldset>
+
+          <!-- Fieldset 2 -->
+          <fieldset style="flex:1; min-width:300px;">
+            <legend>Report Period B</legend>
+            <label>Month: <select id="rep-month-2"></select></label>
+            <label>Year: <input type="number" id="rep-year-2" value="2026" style="width:80px;"></label>
+            <hr style="margin:15px 0;">
+            <p><strong>Completed Orders:</strong> <span id="rep2-orders">0</span></p>
+            <p><strong>Sales Revenue:</strong> <span id="rep2-sales">₱0.00</span></p>
+            <p><strong>Total Expenses:</strong> <span id="rep2-expenses">₱0.00</span></p>
+            <p><strong>Net Profit:</strong> <span id="rep2-profit">₱0.00</span></p>
+          </fieldset>
+        </div>
+      </fieldset>
+    </main>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
