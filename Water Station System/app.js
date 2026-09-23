@@ -567,7 +567,6 @@ function editDelivery(id) {
         alert('Delivery not found.');
         return;
     }
-
     editingDeliveryId = id;
     document.getElementById('dl-customer').value = delivery.customerName;
     document.getElementById('dl-address').value = delivery.address;
@@ -581,16 +580,13 @@ function deleteDelivery(id) {
   if (!confirmDelete) {
     return;
   }
-
   let index = -1;
-
   for (let i = 0; i < state.deliveries.length; i++) {
     if (state.deliveries[i].id === id) {
       index = i;
       break;
     }
   }
-
   if (index !== -1) {
     state.deliveries.splice(index, 1);
     renderDelivery();
@@ -599,17 +595,13 @@ function deleteDelivery(id) {
 }
 
 function uiAddDelivery(e) {
-
     e.preventDefault();
-
     addDelivery({
         customerName: val('dl-customer'),
         address: val('dl-address'),
         quantity: val('dl-qty')
     });
-
     return false;
-
 }
 
 /* =========================================================================
